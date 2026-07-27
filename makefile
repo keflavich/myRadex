@@ -14,6 +14,15 @@ ifeq ("$(IS_GFORTRAN_ABOVE_LEGACY_VERSION)", "0")
   GFORTRAN_LEGACYOPT =
 endif
 
+# gfortran >= 10 rejects mismatched argument types (e.g. a REAL actual
+# argument passed to an INTEGER dummy argument) by default; opkda1.f relies
+# on the old, more permissive behavior.
+GFORTRAN_ARGMISMATCH_VERSION = "10"
+IS_GFORTRAN_ABOVE_ARGMISMATCH_VERSION := $(shell expr "$(GFORTRAN_VERSION)" ">=" "$(GFORTRAN_ARGMISMATCH_VERSION)")
+ifeq ("$(IS_GFORTRAN_ABOVE_ARGMISMATCH_VERSION)", "1")
+  GFORTRAN_LEGACYOPT += -fallow-argument-mismatch
+endif
+
 ifeq ($(cpl), ifort)
   lflags_debug = -debug -save-temps -fpic -heap-arrays -O0 -g -traceback -check all -fpe0 -fp-stack-check -fp-model precise -fimf-arch-consistency=true -fpp
   lflags_fast = -O2 -fpp
