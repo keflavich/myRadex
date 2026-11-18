@@ -51,7 +51,7 @@ wrapper: wrapper_my_radex.so
 debug: lflags = $(lflags_debug)
 debug: my_radex
 
-cflags = $(lflags) -c -cpp $(eq_solver_switch)
+cflags = $(lflags) -fPIC -c -cpp $(eq_solver_switch)
 
 OBJSWRAPPER=linalg_nleq1.o my_radex.o nleq1.o opkda1.o opkda2.o opkdmain.o statistic_equilibrium.o sub_global_variables.o sub_trivials.o wnorm.o zibconst.o zibmon.o zibsec.o wrapper_for_python.o wrapper_for_cython.o pipe_fortran_python.o
 
