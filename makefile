@@ -14,6 +14,15 @@ ifeq ("$(IS_GFORTRAN_ABOVE_LEGACY_VERSION)", "0")
   GFORTRAN_LEGACYOPT =
 endif
 
+# gfortran >= 10 rejects mismatched argument types (e.g. a REAL actual
+# argument passed to an INTEGER dummy argument) by default; opkda1.f relies
+# on the old, more permissive behavior.
+GFORTRAN_ARGMISMATCH_VERSION = "10"
+IS_GFORTRAN_ABOVE_ARGMISMATCH_VERSION := $(shell expr "$(GFORTRAN_VERSION)" ">=" "$(GFORTRAN_ARGMISMATCH_VERSION)")
+ifeq ("$(IS_GFORTRAN_ABOVE_ARGMISMATCH_VERSION)", "1")
+  GFORTRAN_LEGACYOPT += -fallow-argument-mismatch
+endif
+
 ifeq ($(cpl), ifort)
   lflags_debug = -debug -save-temps -fpic -heap-arrays -O0 -g -traceback -check all -fpe0 -fp-stack-check -fp-model precise -fimf-arch-consistency=true -fpp
   lflags_fast = -O2 -fpp
@@ -42,7 +51,7 @@ wrapper: wrapper_my_radex.so
 debug: lflags = $(lflags_debug)
 debug: my_radex
 
-cflags = $(lflags) -c -cpp $(eq_solver_switch)
+cflags = $(lflags) -fPIC -c -cpp $(eq_solver_switch)
 
 OBJSWRAPPER=linalg_nleq1.o my_radex.o nleq1.o opkda1.o opkda2.o opkdmain.o statistic_equilibrium.o sub_global_variables.o sub_trivials.o wnorm.o zibconst.o zibmon.o zibsec.o wrapper_for_python.o wrapper_for_cython.o pipe_fortran_python.o
 
@@ -59,7 +68,7 @@ my_radex: configure.o main.o my_radex.o opkda1.o opkda2.o opkdmain.o statistic_e
 	$(cpl) $(lflags) -o my_radex configure.o main.o my_radex.o opkda1.o opkda2.o opkdmain.o statistic_equilibrium.o sub_global_variables.o sub_trivials.o $(eq_solver).o linalg_nleq1.o wnorm.o zibconst.o zibmon.o zibsec.o 
 
 wrapper_my_radex.so: wrapper_for_python.o my_radex.o opkda1.o opkda2.o opkdmain.o statistic_equilibrium.o sub_global_variables.o sub_trivials.o $(eq_solver).o linalg_nleq1.o wnorm.o zibconst.o zibmon.o zibsec.o 
-	$(f2py) -c -m wrapper_my_radex wrapper_for_python.f90 --include-path "$(shell pwd)" --backend meson
+	$(f2py) -c -m wrapper_my_radex wrapper_for_python.f90 my_radex.o opkda1.o opkda2.o opkdmain.o statistic_equilibrium.o sub_global_variables.o sub_trivials.o $(eq_solver).o linalg_nleq1.o wnorm.o zibconst.o zibmon.o zibsec.o --include-path "$(shell pwd)" --backend meson
 
 configure.o: configure.f90 sub_trivials.o my_radex.o statistic_equilibrium.o
 	$(cpl) $(cflags) configure.f90

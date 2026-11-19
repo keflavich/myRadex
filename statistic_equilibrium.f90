@@ -161,7 +161,7 @@ subroutine load_moldata_LAMBDA(filename, recalculateFreqWithEupElow)
   character(len=512) strtmp
   integer, parameter :: nstr_split = 64
   character(len=32), dimension(nstr_split) :: str_split
-  integer i, j, k, fU, nout
+  integer i, j, k, fU, nout, j_hyphen
   character(len=8), parameter :: strfmt_row = '(A512)'
   character(len=8), parameter :: strfmt_float = '(F16.3)'
   character(len=8), parameter :: strfmt_int = '(I6)'
@@ -292,6 +292,16 @@ subroutine load_moldata_LAMBDA(filename, recalculateFreqWithEupElow)
     read(fU, strfmt_row) strtmp
     call split_str_by_space(strtmp, str_split, nstr_split, nout)
     a_mol_using%colli_data%list(i)%name_partner = trim(str_split(4))
+    ! Standard LAMDA files write e.g. '1 CO-pH2 from Yang et al.' rather than
+    ! '1 CO + pH2 from ...': take the partner from the part after the first
+    ! hyphen of the second field in that case.
+    if (trim(str_split(3)) .eq. 'from') then
+      j_hyphen = index(trim(str_split(2)), '-')
+      if (j_hyphen .gt. 0 .and. j_hyphen .lt. len_trim(str_split(2))) then
+        a_mol_using%colli_data%list(i)%name_partner = &
+          trim(str_split(2)(j_hyphen+1:))
+      end if
+    end if
     if (a_mol_using%colli_data%list(i)%name_partner .eq. 'electron') then
       a_mol_using%colli_data%list(i)%name_partner = 'e'
     else if (a_mol_using%colli_data%list(i)%name_partner .eq. 'with') then
